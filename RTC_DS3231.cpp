@@ -99,7 +99,7 @@ DateTime RTC_DS3231::now()
 DateTime RTC_DS3231::getAlarm(uint8_t AlarmToGet)
 {
 	//set the address pointer in preparation for read
-	uint8_t bytesToGet;
+	int bytesToGet;
     Wire.beginTransmission(DS3231_ADDRESS);
 	if (AlarmToGet == 1){
 		Wire.SEND( DS3231_REG_A1SECONDS );
@@ -112,7 +112,8 @@ DateTime RTC_DS3231::getAlarm(uint8_t AlarmToGet)
 	
 	//start reading
     Wire.requestFrom(DS3231_ADDRESS, bytesToGet);
-    if (AlarmToGet == 1){uint8_t ss = bcd2bin(Wire.RECEIVE() & 0x7F);}else{uint8_t ss = 0;} //strip off the A1M1 bit (should be a zero anyway)
+	uint8_t ss = 0;
+    if (AlarmToGet == 1){ss = bcd2bin(Wire.RECEIVE() & 0x7F);}else{ss = 0;} //strip off the A1M1 bit (should be a zero anyway)
     uint8_t mm = bcd2bin(Wire.RECEIVE() & 0x7F); //strip off the A1M2 bit (should be a zero anyway)
     uint8_t hh = bcd2bin(Wire.RECEIVE() & 0x7F); //strip off the A1M3 bit (should be a zero anyway)
     uint8_t d = 1;
