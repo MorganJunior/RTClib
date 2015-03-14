@@ -4,6 +4,10 @@
 // Modified and expanded by Red Byer 7/24/2013 to work with 3231 better
 //     www.redstoyland.com      Find the code under "mizraith" on github
 //
+// Modified and expanded by Richard Morgan 3/13/2015 to add functionality
+//		for getting and setting alarm times 
+//		find code at https://github.com/MorganJunior
+//
 //  See .h file for the additions
 
 #if ARDUINO < 100
@@ -87,6 +91,46 @@ DateTime RTC_DS3231::now()
     return DateTime (y, m, d, hh, mm, ss);
 }
 
+/**
+ * Get the DateTime from the RTC for Alarm1
+ * Added by Richard Morgan Jr
+ * 3/12/2015
+ **/
+DateTime RTC_DS3231::getAlarm1()
+{
+	//set the address pointer in preparation for read
+    Wire.beginTransmission(DS3231_ADDRESS);
+    Wire.SEND( DS3231_REG_A1SECONDS );
+    Wire.endTransmission();
+	
+	//start reading
+    Wire.requestFrom(DS3231_ADDRESS, 3);
+    uint8_t ss = bcd2bin(Wire.RECEIVE() & 0x7F); //strip off the A1M1 bit
+    uint8_t mm = bcd2bin(Wire.RECEIVE() & 0x7F); //strip off the A1M2 bit
+    uint8_t hh = bcd2bin(Wire.RECEIVE() & 0x7F); //strip off the A1M3 bit
+    uint8_t d = 1;
+    uint8_t m = 1;
+    uint16_t y = 1900;
+
+    return DateTime (y, m, d, hh, mm, ss);
+}
+
+/**
+ * Set the datetime of Alarm1
+ * Added by Richard Morgan Jr
+ * 3/12/2015
+**/
+void RTC_DS3231::setAlarm1(const DateTime& dt)
+{
+	//set the address pointer and then start writing
+    Wire.beginTransmission(DS3231_ADDRESS);
+    Wire.SEND( DS3231_REG_A1SECONDS );
+    Wire.SEND(bin2bcd(dt.second()));
+    Wire.SEND(bin2bcd(dt.minute()));
+    Wire.SEND(bin2bcd(dt.hour()));
+    Wire.SEND(0);
+    Wire.endTransmission();
+}
 
 /**
  * Return temperature as a float in degrees C

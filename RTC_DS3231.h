@@ -4,6 +4,9 @@
 // Modified and expanded by Red Byer 7/24/2013 to work with 3231 better
 //     www.redstoyland.com      Find the code under "mizraith" on github
 //
+// Modified and expanded by Richard Morgan 3/13/2015 to add functionality
+//		for getting and setting alarm times 
+//
 //   Now includes code to read the temperature back form the 3231
 //  Also allows for easy access to the two status registers.
 //
@@ -23,6 +26,8 @@ public:
     static void adjust(const DateTime& dt);		// tested in example code
     uint8_t isrunning(void);					// tested in example code
     static DateTime now();						// tested in example code
+    static DateTime getAlarm1();
+    static void setAlarm1(const DateTime& dt);
     static float getTempAsFloat();				// tested in example code
     static int16_t getTempAsWord();				// tested in example code
     static void enable32kHz(uint8_t enable);	// tested in example code
