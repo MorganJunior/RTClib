@@ -56,7 +56,7 @@ void RTC_DS3231::adjust(const DateTime& dt)
 {
 	//set the address pointer and then start writing
     Wire.beginTransmission(DS3231_ADDRESS);
-    Wire.SEND( DS3231_REG_SECONDS );           // was just '0'
+    Wire.SEND( DS3231_REG_SECONDS ); //sets the register to start on
     Wire.SEND(bin2bcd(dt.second()));
     Wire.SEND(bin2bcd(dt.minute()));
     Wire.SEND(bin2bcd(dt.hour()));
@@ -76,7 +76,7 @@ DateTime RTC_DS3231::now()
 {
 	//set the address pointer in preparation for read
     Wire.beginTransmission(DS3231_ADDRESS);
-    Wire.SEND( DS3231_REG_SECONDS );           // was just '0'
+    Wire.SEND( DS3231_REG_SECONDS ); //sets the register to start on (also copies time values into temporary register for our reading pleasure!)
     Wire.endTransmission();
 
     Wire.requestFrom(DS3231_ADDRESS, 7);
@@ -92,22 +92,29 @@ DateTime RTC_DS3231::now()
 }
 
 /**
- * Get the DateTime from the RTC for Alarm1
+ * Get the DateTime from the RTC for Alarm
  * Added by Richard Morgan Jr
  * 3/12/2015
  **/
-DateTime RTC_DS3231::getAlarm1()
+DateTime RTC_DS3231::getAlarm(uint8_t AlarmToGet)
 {
 	//set the address pointer in preparation for read
+	uint8_t bytesToGet;
     Wire.beginTransmission(DS3231_ADDRESS);
-    Wire.SEND( DS3231_REG_A1SECONDS );
+	if (AlarmToGet == 1){
+		Wire.SEND( DS3231_REG_A1SECONDS );
+		bytesToGet = 3;
+	}else{
+		Wire.SEND( DS3231_REG_A2MINUTES );
+		bytesToGet = 2;
+	}
     Wire.endTransmission();
 	
 	//start reading
-    Wire.requestFrom(DS3231_ADDRESS, 3);
-    uint8_t ss = bcd2bin(Wire.RECEIVE() & 0x7F); //strip off the A1M1 bit
-    uint8_t mm = bcd2bin(Wire.RECEIVE() & 0x7F); //strip off the A1M2 bit
-    uint8_t hh = bcd2bin(Wire.RECEIVE() & 0x7F); //strip off the A1M3 bit
+    Wire.requestFrom(DS3231_ADDRESS, bytesToGet);
+    if (AlarmToGet == 1){uint8_t ss = bcd2bin(Wire.RECEIVE() & 0x7F);}else{uint8_t ss = 0;} //strip off the A1M1 bit (should be a zero anyway)
+    uint8_t mm = bcd2bin(Wire.RECEIVE() & 0x7F); //strip off the A1M2 bit (should be a zero anyway)
+    uint8_t hh = bcd2bin(Wire.RECEIVE() & 0x7F); //strip off the A1M3 bit (should be a zero anyway)
     uint8_t d = 1;
     uint8_t m = 1;
     uint16_t y = 1900;
@@ -116,19 +123,24 @@ DateTime RTC_DS3231::getAlarm1()
 }
 
 /**
- * Set the datetime of Alarm1
+ * Set the datetime of Alarms
  * Added by Richard Morgan Jr
  * 3/12/2015
 **/
-void RTC_DS3231::setAlarm1(const DateTime& dt)
-{
+void RTC_DS3231::setAlarm(const DateTime& dt, uint8_t AlarmToSet )
+{	//AlarmToSet 0 or false = alarm1  1 or true = alarm2
 	//set the address pointer and then start writing
     Wire.beginTransmission(DS3231_ADDRESS);
-    Wire.SEND( DS3231_REG_A1SECONDS );
-    Wire.SEND(bin2bcd(dt.second()));
-    Wire.SEND(bin2bcd(dt.minute()));
-    Wire.SEND(bin2bcd(dt.hour()));
-    Wire.SEND(0);
+	if ( AlarmToSet == 1 ){
+		Wire.SEND( DS3231_REG_A1SECONDS );
+		Wire.SEND(bin2bcd(dt.second() & 0b01111111)); //need to clear the mask bit
+	} else { 
+		Wire.SEND( DS3231_REG_A2MINUTES );
+	}
+    Wire.SEND(bin2bcd(dt.minute() & 0b01111111)); //need to clear the mask bit
+    Wire.SEND(bin2bcd(dt.hour() & 0b01111111)); //need to clear the mask bit
+    Wire.SEND(0b10000001); //This coder doesn't need day/date so...only gonna set the mask bit
+	Wire.SEND(0); //return to register 00h merging changes into register?
     Wire.endTransmission();
 }
 
@@ -271,8 +283,8 @@ void RTC_DS3231::forceTempConv(uint8_t block)
 /**
  * Enable or disable the output to the SQW pin.
  *  Send 1 or true to enable.
- *  This function does _not_ enable battery backed output
- * which helps conserve battery life.
+ *  This function does _not_ enable battery backed output,
+ *  this helps conserve battery life.
  *
  */
 void RTC_DS3231::SQWEnable(uint8_t enable)
@@ -334,7 +346,7 @@ void RTC_DS3231::BBSQWEnable(uint8_t enable)
 }
 
 /**
- *  Set the output frequence of the squarewave SQW pin
+ *  Set the output frequency of the square wave SQW pin
  *
  *  HINT:  Use the defined frequencies in the .h file
  *  

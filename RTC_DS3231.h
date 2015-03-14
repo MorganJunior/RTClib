@@ -26,8 +26,8 @@ public:
     static void adjust(const DateTime& dt);		// tested in example code
     uint8_t isrunning(void);					// tested in example code
     static DateTime now();						// tested in example code
-    static DateTime getAlarm1();
-    static void setAlarm1(const DateTime& dt);
+    static DateTime getAlarm(uint8_t AlarmToGet);
+    static void setAlarm(const DateTime& dt, uint8_t AlarmToSet);
     static float getTempAsFloat();				// tested in example code
     static int16_t getTempAsWord();				// tested in example code
     static void enable32kHz(uint8_t enable);	// tested in example code
